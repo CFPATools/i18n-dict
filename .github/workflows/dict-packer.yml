@@ -1,4 +1,4 @@
-name: Packer
+name: Dict Packer
 on:
   workflow_dispatch:
   push:
