@@ -40,6 +40,7 @@ def main(path, version):
                             mod.modid = o.name
                             mod.curseforge = 'Unknown'
                             keylist.append(mod)
+                            global unknownCount
                             unknownCount += 1
             continue
         e = exists(i)
