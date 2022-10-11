@@ -14,7 +14,7 @@ class ModWord:
     curseforge = ''
 
     def writeLine(self):
-        print(self.origin_name, self.trans_name, self.modid, self.key, self.version, self.curseforge.encode('charmap'))
+        print(self.origin_name, self.trans_name, self.modid, self.key, self.version, self.curseforge.encode('gb18030'))
 
 keylist = []
 
@@ -58,10 +58,10 @@ def main(path, version):
                 mod.modid = e[1]
                 mod.curseforge = e[0]
                 keylist.append(mod)
-    print(f'{version}已处理{len(keylist)}条'.encode('charmap'))
+    print(f'{version}已处理{len(keylist)}条'.encode('gb18030'))
 
     if unknownCount > 0:
-        print(f'注意：本次生成存在{unknownCount}条未知词条'.encode('charmap'))
+        print(f'注意：本次生成存在{unknownCount}条未知词条'.encode('gb18030'))
 
 
 def readFile(f: Path):
@@ -115,13 +115,13 @@ def exists(dir: Path):
 if __name__ == '__main__':
     # stdout = TextIOWrapper(stdout.buffer, encoding='gbk')
 
-    print('程序初始化'.encode('charmap'))
+    print('程序初始化'.encode('gb18030'))
     mkdir('DictPacker')
-    print('创建文件夹DictPacker'.encode('charmap'))
+    print('创建文件夹DictPacker'.encode('gb18030'))
 
     folder = f'./projects/{argv[1]}/assets'
     version = argv[1]
-    print(f'开始处理{version}'.encode('charmap'))
+    print(f'开始处理{version}'.encode('gb18030'))
     main(folder, version)
     # main('./projects/1.12.2/assets', '1.12.2')
     # main('./projects/1.16/assets', '1.16')
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
     savejson = []
 
-    print('开始生成json'.encode('charmap'))
+    print('开始生成json'.encode('gb18030'))
     for i in keylist:
         i: ModWord
         mod = {
@@ -150,4 +150,4 @@ if __name__ == '__main__':
     file.write(savejson)
     file.close()
 
-    print(f'已生成Dict-{version}.json'.encode('charmap'))
+    print(f'已生成Dict-{version}.json'.encode('gb18030'))
