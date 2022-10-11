@@ -1,3 +1,4 @@
+from os import mkdir
 from pathlib import Path
 from re import findall, MULTILINE
 from json import dumps
@@ -16,6 +17,8 @@ class ModWord:
         print(self.origin_name, self.trans_name, self.modid, self.key, self.version, self.curseforge)
 
 keylist = []
+
+unknownCount = 0
 
 
 def main(path, version):
@@ -37,6 +40,7 @@ def main(path, version):
                             mod.modid = o.name
                             mod.curseforge = 'Unknown'
                             keylist.append(mod)
+                            unknownCount += 1
             continue
         e = exists(i)
         if e == False: continue
@@ -53,6 +57,10 @@ def main(path, version):
                 mod.modid = e[1]
                 mod.curseforge = e[0]
                 keylist.append(mod)
+    print(f'{version}已处理{len(keylist)}条')
+
+    if unknownCount > 0:
+        print(f'注意：本次生成存在{unknownCount}条未知词条')
 
 
 def readFile(f: Path):
@@ -104,8 +112,13 @@ def exists(dir: Path):
 
 
 if __name__ == '__main__':
+    print('程序初始化')
+    mkdir('DictPacker')
+    print('创建文件夹DictPacker')
+
     folder = f'./projects/{argv[1]}/assets'
     version = argv[1]
+    print(f'开始处理{version}')
     main(folder, version)
     # main('./projects/1.12.2/assets', '1.12.2')
     # main('./projects/1.16/assets', '1.16')
@@ -115,7 +128,7 @@ if __name__ == '__main__':
 
     savejson = []
 
-
+    print('开始生成json')
     for i in keylist:
         i: ModWord
         mod = {
@@ -130,6 +143,8 @@ if __name__ == '__main__':
 
     savejson = dumps(savejson, ensure_ascii=False, indent=4)
 
-    file = open(f'Dict-{version}.json', 'w', encoding='utf-8')
+    file = open(f'DictPacker/Dict-{version}.json', 'w', encoding='utf-8')
     file.write(savejson)
     file.close()
+
+    print(f'已生成Dict-{version}.json')
