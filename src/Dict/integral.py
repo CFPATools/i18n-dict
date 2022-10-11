@@ -11,7 +11,7 @@ integral_mini = {}
 # 整合词典
 for i in output.iterdir():
     if i.suffix == '.json':
-        print(f'处理{i.name}中'.encode('utf-8'), end=' ')
+        print(f'处理{i.name}中'.encode('charmap'), end=' ')
         count = 0
         for i in loads(open(i, encoding='utf-8').read()):
             count += 1
@@ -19,9 +19,9 @@ for i in output.iterdir():
             if i['origin_name'] == '': continue
             integral.append(i)
             integral_mini[i['origin_name']] = i['trans_name']
-        print(f'已处理{count}个词条'.encode('utf-8'))
+        print(f'已处理{count}个词条'.encode('charmap'))
 
-print('开始生成整合文件'.encode('utf-8'))
+print('开始生成整合文件'.encode('charmap'))
 
 text = dumps(integral, ensure_ascii=False, indent=4)
 mini_text = dumps(integral_mini, ensure_ascii=False, separators=(',',':'))
@@ -29,10 +29,10 @@ mini_text = dumps(integral_mini, ensure_ascii=False, separators=(',',':'))
 # 保存词典json文件
 if text != '[]':
     Path('DictPacker/Dict-Integral.json').write_text(text, encoding='utf-8')
-    print(f'已生成Dict-Integral.json，共有词条{len(integral)}个'.encode('utf-8'))
+    print(f'已生成Dict-Integral.json，共有词条{len(integral)}个'.encode('charmap'))
 if mini_text != '{}':
     Path('DictPacker/Dict-Integral-Mini.json').write_text(mini_text, encoding='utf-8')
-    print(f'已生成Dict-Integral-Mini.json，共有词条{len(integral_mini)}个'.encode('utf-8'))
+    print(f'已生成Dict-Integral-Mini.json，共有词条{len(integral_mini)}个'.encode('charmap'))
 
 # 生成并保存sqlite数据库
 dictdb = connect('DictPacker/Dict-Sqlite.db')
@@ -56,4 +56,4 @@ for i in integral:
     exec.execute('INSERT INTO dict(ORIGIN_NAME,TRANS_NAME,MODID,KEY,VERSION,CURSEFORGE) VALUES (?,?,?,?,?,?);', (o,t,m,k,v,c))
 dictdb.commit()
 dictdb.close()
-print('已生成sqlite数据库，表名为dict'.encode('utf-8'))
+print('已生成sqlite数据库，表名为dict'.encode('charmap'))
