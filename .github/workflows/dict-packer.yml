@@ -84,7 +84,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: Snapshot-${{ steps.create_timestamp.outputs.timestamp }}
+          tag_name: 模组词典-${{ steps.create_timestamp.outputs.timestamp }}
           release_name: 模组词典-${{ steps.create_timestamp.outputs.timestamp }}
           draft: false
           prerelease: false
