@@ -14,7 +14,7 @@ class ModWord:
     curseforge = ''
 
     def writeLine(self):
-        print(self.origin_name, self.trans_name, self.modid, self.key, self.version, self.curseforge)
+        print(self.origin_name, self.trans_name, self.modid, self.key, self.version, self.curseforge.encode('utf-8'))
 
 keylist = []
 
@@ -58,10 +58,10 @@ def main(path, version):
                 mod.modid = e[1]
                 mod.curseforge = e[0]
                 keylist.append(mod)
-    print(f'{version}已处理{len(keylist)}条')
+    print(f'{version}已处理{len(keylist)}条'.encode('utf-8'))
 
     if unknownCount > 0:
-        print(f'注意：本次生成存在{unknownCount}条未知词条')
+        print(f'注意：本次生成存在{unknownCount}条未知词条'.encode('utf-8'))
 
 
 def readFile(f: Path):
@@ -113,16 +113,16 @@ def exists(dir: Path):
 
 
 if __name__ == '__main__':
-    stdout = TextIOWrapper(stdout.buffer, encoding='gbk')
+    # stdout = TextIOWrapper(stdout.buffer, encoding='gbk')
 
 
-    print('程序初始化')
+    print('程序初始化'.encode('utf-8'))
     mkdir('DictPacker')
-    print('创建文件夹DictPacker')
+    print('创建文件夹DictPacker'.encode('utf-8'))
 
     folder = f'./projects/{argv[1]}/assets'
     version = argv[1]
-    print(f'开始处理{version}')
+    print(f'开始处理{version}'.encode('utf-8'))
     main(folder, version)
     # main('./projects/1.12.2/assets', '1.12.2')
     # main('./projects/1.16/assets', '1.16')
@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
     savejson = []
 
-    print('开始生成json')
+    print('开始生成json'.encode('utf-8'))
     for i in keylist:
         i: ModWord
         mod = {
@@ -151,4 +151,4 @@ if __name__ == '__main__':
     file.write(savejson)
     file.close()
 
-    print(f'已生成Dict-{version}.json')
+    print(f'已生成Dict-{version}.json'.encode('utf-8'))
