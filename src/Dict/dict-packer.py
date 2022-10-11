@@ -130,6 +130,6 @@ if __name__ == '__main__':
 
     savejson = dumps(savejson, ensure_ascii=False, indent=4)
 
-    file = open(f'Dict-{version}.json', 'w', encoding='utf-8', indent=4)
+    file = open(f'Dict-{version}.json', 'w', encoding='utf-8')
     file.write(savejson)
     file.close()

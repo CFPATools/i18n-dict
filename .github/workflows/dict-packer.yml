@@ -49,8 +49,8 @@ jobs:
         with:
           paths: projects/1.18-fabric
 
-      - name: Build Packer
-        run: dotnet publish .\src\Packer\Packer.csproj -o ./ -r win-x64 -p:PublishSingleFile=true
+      # - name: Build Packer
+      #   run: dotnet publish .\src\Packer\Packer.csproj -o ./ -r win-x64 -p:PublishSingleFile=true
 
       - name: Run Packer
         run: python .\src\Dict\dict-packer.py "1.12.2"
