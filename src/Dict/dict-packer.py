@@ -116,8 +116,9 @@ if __name__ == '__main__':
     # stdout = TextIOWrapper(stdout.buffer, encoding='gbk')
 
     print('程序初始化')
-    mkdir('DictPacker')
-    print('创建文件夹DictPacker')
+    if not Path('DictPacker').exists:
+        mkdir('DictPacker')
+        print('创建文件夹DictPacker')
 
     folder = f'./projects/{argv[1]}/assets'
     version = argv[1]
