@@ -4,6 +4,7 @@ from re import findall, MULTILINE
 from json import dumps
 from sys import argv, stdout
 from io import TextIOWrapper
+from os.path import exists
 
 class ModWord:
     origin_name = ''
@@ -116,7 +117,7 @@ if __name__ == '__main__':
     # stdout = TextIOWrapper(stdout.buffer, encoding='gbk')
 
     print('程序初始化')
-    if not Path('DictPacker').exists:
+    if not exists('DictPacker'):
         mkdir('DictPacker')
         print('创建文件夹DictPacker')
 
