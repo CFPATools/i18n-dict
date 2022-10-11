@@ -50,30 +50,30 @@ jobs:
       #     paths: projects/1.18-fabric
 
       # - name: Build Packer
-      #   run: dotnet publish .\src\Packer\Packer.csproj -o ./ -r win-x64 -p:PublishSingleFile=true
+      #   run: dotnet publish ./src/Packer/Packer.csproj -o ./ -r win-x64 -p:PublishSingleFile=true
 
       - name: Pack 1.12.2 dict
-        run: python .\src\Dict\dict-packer.py "1.12.2"
+        run: python ./src/Dict/dict-packer.py "1.12.2"
         # if: steps.changed-1122.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
 
       - name: Pack 1.16 dict
-        run: python .\src\Dict\dict-packer.py "1.16"
+        run: python ./src/Dict/dict-packer.py "1.16"
         # if: steps.changed-116.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
 
       - name: Pack 1.16-fabric dict
-        run: python .\src\Dict\dict-packer.py "1.16-fabric"
+        run: python ./src/Dict/dict-packer.py "1.16-fabric"
         # if: steps.changed-116-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
 
       - name: Pack 1.18 dict
-        run: python .\src\Dict\dict-packer.py "1.18"
+        run: python ./src/Dict/dict-packer.py "1.18"
         # if: steps.changed-118.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
         
       - name: Pack 1.18-fabric dict
-        run: python .\src\Dict\dict-packer.py "1.18-fabric"
+        run: python ./src/Dict/dict-packer.py "1.18-fabric"
         # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
 
       - name: Pack Integral files
-        run: python .\src\Dict\integral.py
+        run: python ./src/Dict/integral.py
         # if: steps.changed-116.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
 
       - name: Create timestamp
