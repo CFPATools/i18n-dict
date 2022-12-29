@@ -18,7 +18,8 @@ for i in output.iterdir():
             if len(i['origin_name']) > 50: continue
             if i['origin_name'] == '': continue
             integral.append(i)
-            integral_mini[i['origin_name']] = i['trans_name']
+            if i['origin_name'] != i['trans_name']:
+                integral_mini[i['origin_name']] = i['trans_name']
         print(f'已处理{count}个词条')
 
 print('开始生成整合文件')
