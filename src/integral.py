@@ -19,8 +19,15 @@ for i in output.iterdir():
             if i['origin_name'] == '': continue
             integral.append(i)
             if i['origin_name'] != i['trans_name']:
-                integral_mini[i['origin_name']] = i['trans_name']
+                if not i['origin_name'] in integral_mini.keys():
+                    integral_mini[i['origin_name']] = []
+                integral_mini[i['origin_name']].append(i['trans_name'])
         print(f'已处理{count}个词条')
+
+for i in integral_mini.keys():
+    nlist: list = integral_mini[i]
+    nset = set(nlist)
+    integral_mini[i] = sorted(nset, key=lambda x: nlist.count(x), reverse=True)
 
 print('开始生成整合文件')
 
