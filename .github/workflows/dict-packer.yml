@@ -2,7 +2,7 @@ name: Dict Packer
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 17 * * 5' # 每周五晚上5点执行
+    - cron: '0 9 * * 5' # 每周五晚上5点执行，根据Github抵消时差后是17-8
 
 jobs:
   build:
