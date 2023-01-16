@@ -2,7 +2,6 @@ from pathlib import Path
 from json import loads, dumps
 from sqlite3 import connect
 
-
 output = Path('DictPacker')
 
 integral = []
@@ -62,6 +61,7 @@ for i in integral:
     v = i['version']
     c = i['curseforge']
     exec.execute('INSERT INTO dict(ORIGIN_NAME,TRANS_NAME,MODID,KEY,VERSION,CURSEFORGE) VALUES (?,?,?,?,?,?);', (o,t,m,k,v,c))
+exec.execute('CREATE INDEX dict_index ON dict(origin_name)')
 dictdb.commit()
 dictdb.close()
 print('已生成sqlite数据库，表名为dict')
