@@ -22,7 +22,7 @@ Dict-Sqlite.db
 ### 文件结构
 
 `Dict.json`主要文件结构是一个数组，其中存储着词典条目各项内容，条目数据形如
-```json
+```json5
 {
     "origin_name": "Cart", // 英文原文
     "trans_name": "车", // 中文译文
