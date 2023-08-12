@@ -43,8 +43,16 @@ jobs:
         run: python ./src/dict-packer.py "1.18-fabric"
         # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
         
-      - name: Pack 1.19
+      - name: Pack 1.19 dict
         run: python ./src/dict-packer.py "1.19"
+        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
+
+      - name: Pack 1.20 dict
+        run: python ./src/dict-packer.py "1.20"
+        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
+
+      - name: Pack 1.20-fabric dict
+        run: python ./src/dict-packer.py "1.20-fabric"
         # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
 
       - name: Pack Integral files
