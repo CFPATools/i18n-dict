@@ -44,7 +44,7 @@ jobs:
         with:
           name: Dict-${{ matrix.version }}.json
           path: DictPacker/Dict-${{ matrix.version }}.json
-          compression-level: 0
+          compression-level: 9
 
   release:
     needs: packer
@@ -82,27 +82,24 @@ jobs:
           prerelease: false
 
       - name: Update release asset Integral
-        uses: actions/upload-release-asset@main
+        uses: xresloader/upload-to-github-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: DictPacker/Dict-Integral.json
-          asset_name: Dict.json
-          asset_content_type: application/json
+          # upload_url: ${{ steps.create_release.outputs.upload_url }}
+          file: Dict.json
+          update_latest_release: true
 
       - name: Update release asset Integral Minimal
-        uses: actions/upload-release-asset@main
+        uses: xresloader/upload-to-github-release@main
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: DictPacker/Dict-Integral-Mini.json
-          asset_name: Dict-Mini.json
-          asset_content_type: application/json
+          # upload_url: ${{ steps.create_release.outputs.upload_url }}
+          file: Dict-Mini.json
+          update_latest_release: true
 
       - name: Update release asset Integral Database
-        uses: actions/upload-release-asset@main
+        uses: xresloader/upload-to-github-release@main
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: DictPacker/Dict-Sqlite.db
-          asset_name: Dict-Sqlite.db
-          asset_content_type: application/sql
+          # upload_url: ${{ steps.create_release.outputs.upload_url }}
+          file: Dict-Sqlite.db
+          update_latest_release: true
