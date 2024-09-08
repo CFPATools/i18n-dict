@@ -42,7 +42,7 @@ if mini_text != '{}':
     print(f'已生成Dict-Integral-Mini.json，共有词条{len(integral_mini)}个')
 
 # 生成并保存sqlite数据库
-dictdb = connect('Dict.db')
+dictdb = connect('Dict-Sqlite.db')
 exec = dictdb.cursor()
 exec.execute('''CREATE TABLE IF NOT EXISTS dict(
         ID INTEGER PRIMARY KEY    AUTOINCREMENT,

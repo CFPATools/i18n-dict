@@ -69,38 +69,19 @@ jobs:
 
       - name: Create timestamp
         id: create_timestamp
-        run: echo "::set-output name=timestamp::$(date -u '+%Y_%m_%d_%H_%M_%S')"
+        run: echo "timestamp=$(date -u '+%Y_%m_%d_%H_%M_%S')" >> $GITHUB_OUTPUT
 
       - name: Create release
         id: create_release
-        uses: actions/create-release@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: 模组词典-${{ steps.create_timestamp.outputs.timestamp }}
           tag_name: 模组词典-${{ steps.create_timestamp.outputs.timestamp }}
-          release_name: 模组词典-${{ steps.create_timestamp.outputs.timestamp }}
-          draft: false
-          prerelease: false
-
-      - name: Update release asset Integral
-        uses: xresloader/upload-to-github-release@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # upload_url: ${{ steps.create_release.outputs.upload_url }}
-          file: Dict.json
-          update_latest_release: true
-
-      - name: Update release asset Integral Minimal
-        uses: xresloader/upload-to-github-release@main
-        with:
-          # upload_url: ${{ steps.create_release.outputs.upload_url }}
-          file: Dict-Mini.json
-          update_latest_release: true
-
-      - name: Update release asset Integral Database
-        uses: xresloader/upload-to-github-release@main
-        with:
-          # upload_url: ${{ steps.create_release.outputs.upload_url }}
-          file: Dict-Sqlite.db
-          update_latest_release: true
+          files: |
+            Dict.json
+            Dict-Mini.json
+            Dict-Sqlite.db
+          body: |
+            Now you can download the language files for each version at this link:
+            https://github.com/CFPATools/i18n-dict/actions/runs/${{ github.run_id }}
