@@ -7,6 +7,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: 
+          - "1.12.2"
+          - "1.16"
+          - "1.16-fabric"
+          - "1.18"
+          - "1.18-fabric"
+          - "1.19"
+          - "1.20"
+          - "1.20-fabric"
+          - "1.21"
     steps:
       - name: Checkout Packer
         uses: actions/checkout@v3
@@ -23,49 +35,21 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Pack 1.12.2 dict
-        run: python ./src/dict-packer.py "1.12.2"
-        # if: steps.changed-1122.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
-
-      - name: Pack 1.16 dict
-        run: python ./src/dict-packer.py "1.16"
-        # if: steps.changed-116.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
-
-      - name: Pack 1.16-fabric dict
-        run: python ./src/dict-packer.py "1.16-fabric"
-        # if: steps.changed-116-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
-
-      - name: Pack 1.18 dict
-        run: python ./src/dict-packer.py "1.18"
-        # if: steps.changed-118.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
-        
-      - name: Pack 1.18-fabric dict
-        run: python ./src/dict-packer.py "1.18-fabric"
-        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
-        
-      - name: Pack 1.19 dict
-        run: python ./src/dict-packer.py "1.19"
-        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
-
-      - name: Pack 1.20 dict
-        run: python ./src/dict-packer.py "1.20"
-        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
-
-      - name: Pack 1.20-fabric dict
-        run: python ./src/dict-packer.py "1.20-fabric"
-        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
+      - name: Pack dict
+        run: python ./src/dict-packer.py ${{ matrix.version }}
 
       - name: Pack Integral files
+        if: ${{ matrix.version == '1.21' }}
         run: python ./src/integral.py
-        # if: steps.changed-116.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
 
       - name: Create timestamp
+        if: ${{ matrix.version == '1.21' }}
         id: create_timestamp
         run: echo "::set-output name=timestamp::$(TZ=UTC-8 date '+%Y_%m_%d_%H_%M_%S')"
         shell: bash
 
-      # Create the release: https://github.com/actions/create-release
       - name: Create release
+        if: ${{ matrix.version == '1.21' }}
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -76,10 +60,8 @@ jobs:
           draft: false
           prerelease: false
 
-      # Upload release asset: https://github.com/actions/upload-release-asset
       - name: Update release asset Integral
-        id: upload-release-asset6
-        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
+        if: ${{ matrix.version == '1.21' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -88,10 +70,9 @@ jobs:
           asset_path: DictPacker/Dict-Integral.json
           asset_name: Dict.json
           asset_content_type: application/json
-      
+
       - name: Update release asset Integral Minimal
-        id: upload-release-asset7
-        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
+        if: ${{ matrix.version == '1.21' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -100,10 +81,9 @@ jobs:
           asset_path: DictPacker/Dict-Integral-Mini.json
           asset_name: Dict-Mini.json
           asset_content_type: application/json
-      
+
       - name: Update release asset Integral Database
-        id: upload-release-asset8
-        # if: steps.changed-118-fabric.outputs.changed == 'true' ||  github.event_name == 'workflow_dispatch'
+        if: ${{ matrix.version == '1.21' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
