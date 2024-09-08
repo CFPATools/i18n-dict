@@ -88,19 +88,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # upload_url: ${{ steps.create_release.outputs.upload_url }}
-          file: DictPacker/Dict.json
+          file: Dict.json
           update_latest_release: true
 
       - name: Update release asset Integral Minimal
         uses: xresloader/upload-to-github-release@main
         with:
           # upload_url: ${{ steps.create_release.outputs.upload_url }}
-          file: DictPacker/Dict-Mini.json
+          file: Dict-Mini.json
           update_latest_release: true
 
       - name: Update release asset Integral Database
         uses: xresloader/upload-to-github-release@main
         with:
           # upload_url: ${{ steps.create_release.outputs.upload_url }}
-          file: DictPacker/Dict-Sqlite.db
+          file: Dict-Sqlite.db
           update_latest_release: true

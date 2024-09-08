@@ -35,14 +35,14 @@ mini_text = dumps(integral_mini, ensure_ascii=False, separators=(',',':'))
 
 # 保存词典json文件
 if text != '[]':
-    Path('DictPacker/Dict.json').write_text(text, encoding='utf-8')
+    Path('Dict.json').write_text(text, encoding='utf-8')
     print(f'已生成Dict-Integral.json，共有词条{len(integral)}个')
 if mini_text != '{}':
-    Path('DictPacker/Dict-Mini.json').write_text(mini_text, encoding='utf-8')
+    Path('Dict-Mini.json').write_text(mini_text, encoding='utf-8')
     print(f'已生成Dict-Integral-Mini.json，共有词条{len(integral_mini)}个')
 
 # 生成并保存sqlite数据库
-dictdb = connect('DictPacker/Dict.db')
+dictdb = connect('Dict.db')
 exec = dictdb.cursor()
 exec.execute('''CREATE TABLE IF NOT EXISTS dict(
         ID INTEGER PRIMARY KEY    AUTOINCREMENT,
