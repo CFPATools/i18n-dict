@@ -83,5 +83,5 @@ jobs:
             Dict-Mini.json
             Dict-Sqlite.db
           body: |
-            Now you can download the language files for each version at this link:
+            你可以在以下链接下载各个独立 Minecraft 版本的模组词典：
             https://github.com/CFPATools/i18n-dict/actions/runs/${{ github.run_id }}
