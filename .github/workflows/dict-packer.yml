@@ -40,7 +40,7 @@ jobs:
         run: python ./src/packer.py ${{ matrix.version }}
 
       - name: Upload JSON files
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@main
         with:
           name: json-files
           path: DictPacker/*.json
@@ -71,7 +71,7 @@ jobs:
 
       - name: Create release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -81,7 +81,7 @@ jobs:
           prerelease: false
 
       - name: Update release asset Integral
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -91,7 +91,7 @@ jobs:
           asset_content_type: application/json
 
       - name: Update release asset Integral Minimal
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@main
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: DictPacker/Dict-Integral-Mini.json
@@ -99,7 +99,7 @@ jobs:
           asset_content_type: application/json
 
       - name: Update release asset Integral Database
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@main
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: DictPacker/Dict-Sqlite.db
