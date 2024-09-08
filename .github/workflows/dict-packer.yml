@@ -42,8 +42,8 @@ jobs:
       - name: Upload JSON files
         uses: actions/upload-artifact@main
         with:
-          name: json-files
-          path: DictPacker/*.json
+          name: Dict-${{ matrix.version }}.json
+          path: DictPacker/Dict-${{ matrix.version }}.json
 
   release:
     needs: packer
@@ -59,7 +59,6 @@ jobs:
       - name: Download JSON files
         uses: actions/download-artifact@main
         with:
-          name: json-files
           path: DictPacker
 
       - name: Pack Integral files
