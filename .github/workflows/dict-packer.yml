@@ -20,6 +20,8 @@ jobs:
           - "1.20"
           - "1.20-fabric"
           - "1.21"
+    outputs:
+      version: ${{ matrix.version }}
     steps:
       - name: Checkout Scripts
         uses: actions/checkout@main
@@ -83,5 +85,7 @@ jobs:
             Dict-Mini.json
             Dict-Sqlite.db
           body: |
+            当前支持的最新版本：${{ needs.packer.outputs.version }}
+            
             你可以在以下链接下载各个独立 Minecraft 版本的模组词典：
             https://github.com/CFPATools/i18n-dict/actions/runs/${{ github.run_id }}
