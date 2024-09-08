@@ -44,6 +44,7 @@ jobs:
         with:
           name: Dict-${{ matrix.version }}.json
           path: DictPacker/Dict-${{ matrix.version }}.json
+          compression-level: 0
 
   release:
     needs: packer
@@ -60,6 +61,7 @@ jobs:
         uses: actions/download-artifact@main
         with:
           path: DictPacker
+          merge-multiple: true
 
       - name: Pack Integral files
         run: python ./src/integral.py
