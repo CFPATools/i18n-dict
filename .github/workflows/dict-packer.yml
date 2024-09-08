@@ -1,15 +1,16 @@
-name: Dict Packer
+name: Release Packed Dict
+
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 9 * * 5' # 每周五晚上5点执行，根据Github抵消时差后是17-8
 
 jobs:
-  build:
+  packer:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: 
+        version:
           - "1.12.2"
           - "1.16"
           - "1.16-fabric"
@@ -20,36 +21,55 @@ jobs:
           - "1.20-fabric"
           - "1.21"
     steps:
-      - name: Checkout Packer
-        uses: actions/checkout@v3
+      - name: Checkout Scripts
+        uses: actions/checkout@main
         with:
-          ref: main
+          fetch-depth: '1'
 
       - name: Checkout Language Pack
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
         with:
           repository: CFPAOrg/Minecraft-Mod-Language-Package
           path: Minecraft-Mod-Language-Package
 
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@main
         with:
           python-version: "3.10"
 
       - name: Pack dict
-        run: python ./src/dict-packer.py ${{ matrix.version }}
+        run: python ./src/packer.py ${{ matrix.version }}
+
+      - name: Upload JSON files
+        uses: actions/upload-artifact@v2
+        with:
+          name: json-files
+          path: DictPacker/*.json
+
+  release:
+    needs: packer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Scripts
+        uses: actions/checkout@main
+
+      - uses: actions/setup-python@main
+        with:
+          python-version: "3.10"
+
+      - name: Download JSON files
+        uses: actions/download-artifact@main
+        with:
+          name: json-files
+          path: DictPacker
 
       - name: Pack Integral files
-        if: ${{ matrix.version == '1.21' }}
         run: python ./src/integral.py
 
       - name: Create timestamp
-        if: ${{ matrix.version == '1.21' }}
         id: create_timestamp
-        run: echo "::set-output name=timestamp::$(TZ=UTC-8 date '+%Y_%m_%d_%H_%M_%S')"
-        shell: bash
+        run: echo "::set-output name=timestamp::$(date -u '+%Y_%m_%d_%H_%M_%S')"
 
       - name: Create release
-        if: ${{ matrix.version == '1.21' }}
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -61,7 +81,6 @@ jobs:
           prerelease: false
 
       - name: Update release asset Integral
-        if: ${{ matrix.version == '1.21' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,10 +91,7 @@ jobs:
           asset_content_type: application/json
 
       - name: Update release asset Integral Minimal
-        if: ${{ matrix.version == '1.21' }}
         uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: DictPacker/Dict-Integral-Mini.json
@@ -83,10 +99,7 @@ jobs:
           asset_content_type: application/json
 
       - name: Update release asset Integral Database
-        if: ${{ matrix.version == '1.21' }}
         uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: DictPacker/Dict-Sqlite.db
