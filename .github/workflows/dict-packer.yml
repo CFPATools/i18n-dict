@@ -29,6 +29,7 @@ jobs:
       - name: Checkout Language Pack
         uses: actions/checkout@main
         with:
+          fetch-depth: '1'
           repository: CFPAOrg/Minecraft-Mod-Language-Package
           path: Minecraft-Mod-Language-Package
 
