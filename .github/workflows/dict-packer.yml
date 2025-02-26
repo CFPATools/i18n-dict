@@ -37,7 +37,7 @@ jobs:
 
       - uses: actions/setup-python@main
         with:
-          python-version: "3.10"
+          python-version: "3.13"
 
       - name: Pack dict
         run: python ./src/packer.py ${{ matrix.version }}
@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/setup-python@main
         with:
-          python-version: "3.10"
+          python-version: "3.13"
 
       - name: Download JSON files
         uses: actions/download-artifact@main
@@ -90,3 +90,24 @@ jobs:
             
             你可以在以下 Actions 链接下载各个独立 Minecraft 版本的模组词典：
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  cleanup:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@main
+
+      - uses: actions/setup-python@main
+        with:
+          python-version: "3.13"
+
+      - name: Install Dependencies
+        run: pip install PyGithub python-dateutil types-python-dateutil
+
+      - name: Run Cleanup Script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python src/cleanup.py
