@@ -7,7 +7,7 @@ on:
 
 jobs:
   packer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     strategy:
       matrix:
         version:
@@ -51,7 +51,7 @@ jobs:
 
   release:
     needs: packer
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout Scripts
         uses: actions/checkout@main
@@ -93,7 +93,7 @@ jobs:
 
   cleanup:
     needs: release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: write
     steps:
