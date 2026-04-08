@@ -1,6 +1,7 @@
 from os import mkdir
 from pathlib import Path
 from re import findall, MULTILINE
+from json import loads
 from json import dumps
 from sys import argv, stdout
 from io import TextIOWrapper
@@ -44,21 +45,21 @@ def main(path, version):
                             global unknownCount
                             unknownCount += 1
             continue
-        e = exists(i)
-        if e == False: continue
-        en_dict: dict = readFile(e[2])
-        zh_dict: dict = readFile(e[3])
-        zh_keys = zh_dict.keys()
-        for key, value in en_dict.items():
-            if key in zh_keys:
-                mod = ModWord()
-                mod.key = key
-                mod.origin_name = value
-                mod.trans_name = zh_dict[key]
-                mod.version = version
-                mod.modid = e[1]
-                mod.curseforge = e[0]
-                keylist.append(mod)
+        lang_pairs = collect_lang_pairs(i)
+        for curseforge, modid, en_file, zh_file in lang_pairs:
+            en_dict: dict = readFile(en_file)
+            zh_dict: dict = readFile(zh_file)
+            zh_keys = zh_dict.keys()
+            for key, value in en_dict.items():
+                if key in zh_keys:
+                    mod = ModWord()
+                    mod.key = key
+                    mod.origin_name = value
+                    mod.trans_name = zh_dict[key]
+                    mod.version = version
+                    mod.modid = modid
+                    mod.curseforge = curseforge
+                    keylist.append(mod)
     print(f'{version}已处理{len(keylist)}条')
 
     if unknownCount > 0:
@@ -70,47 +71,48 @@ def readFile(f: Path):
     if f.name.endswith('.lang'):
         text = f.open(encoding='utf-8').readlines()
         for i in text:
-            i = i.split('=')
+            i = i.split('=', 1)
             for o in range(len(i)):
                 if i[o].endswith('\n'):
                     i[o] = i[o][:-1]
             if len(i) == 2:
                 ret_dict[i[0]] = i[1]
     elif f.name.endswith('.json'):
-        text = findall('"[^"]+"\:\s*"[^"]+"', f.open(encoding='utf-8').read(), flags=MULTILINE)
-        for i in text:
-            key, value = findall('"[^"]+"', i, flags=MULTILINE)
-            ret_dict[key[1:-1]] = value[1:-1]
+        text = f.open(encoding='utf-8').read()
+        try:
+            json_dict = loads(text)
+        except Exception:
+            # 兼容历史上可能出现的格式问题（例如尾随逗号）
+            pairs = findall('"[^"]+"\:\s*"[^"]+"', text, flags=MULTILINE)
+            for i in pairs:
+                key, value = findall('"[^"]+"', i, flags=MULTILINE)
+                ret_dict[key[1:-1]] = value[1:-1]
+            return ret_dict
+        if isinstance(json_dict, dict):
+            for key, value in json_dict.items():
+                if isinstance(value, str):
+                    ret_dict[key] = value
     return ret_dict
 
 
-def exists(dir: Path):
-    count = 0
-    son_dir: Path
-    for i in dir.iterdir():
-        if count > 0: return False
-        son_dir = i
-        count += 1
-    lang: Path = None
-    for i in son_dir.iterdir():
-        if i.name == 'lang':
-            lang = i
-            break
-    else:
-        return False
-    en = False
-    zh = False
-    file = [None, None]
-    for i in lang.iterdir():
-        if i.stem == 'zh_cn':
-            zh = True
-            file[1] = i
-        if i.stem == 'en_us':
-            en = True
-            file[0] = i
-    if not (zh and en): return False
-    
-    return (dir.name, son_dir.name, file[0], file[1])
+def collect_lang_pairs(dir: Path):
+    ret = []
+    for son_dir in dir.iterdir():
+        if not son_dir.is_dir():
+            continue
+        lang = son_dir / 'lang'
+        if not lang.is_dir():
+            continue
+        en_file = None
+        zh_file = None
+        for i in lang.iterdir():
+            if i.stem == 'zh_cn':
+                zh_file = i
+            if i.stem == 'en_us':
+                en_file = i
+        if en_file and zh_file:
+            ret.append((dir.name, son_dir.name, en_file, zh_file))
+    return ret
 
 
 if __name__ == '__main__':
