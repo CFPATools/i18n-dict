@@ -1,5 +1,24 @@
 # Breaking Changes
 
+## Dict.json
+
+修改时间（北京时间）：2026-04-08 20:30:00 CST
+
+词典生成阶段现在会处理更多上游文件。
+
+现在 `Dict.json` 不再只收录传统的 `lang/` 平铺键值，还会收录：
+- `packer-policy.json` 处理后的资源
+- 非根 `lang` 路径与根目录 locale 文件
+- `.local`、`.hl` 等键值文本
+- 含嵌套结构的 JSON 字符串叶子节点
+
+影响：
+- 词条总数可能显著增加。
+- `key` 不再保证永远是原始 Translation Key。
+- 对于 guide、journal、`.local`、`.hl`、嵌套 JSON 等复杂资源，`key` 可能是 `目标路径#结构路径`。
+
+如果你的代码依赖 `key` 必须匹配传统 Translation Key 模式，需要同时接受 `目标路径#结构路径` 这种形式。
+
 ## Dict-Mini.json
 
 修改时间（北京时间）：2026-04-08 16:23:58 CST
