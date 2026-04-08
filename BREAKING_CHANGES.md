@@ -17,3 +17,22 @@
 - 如果你的代码把第一项当成“总出现次数最多的译名”，这个假设现在不成立。
 
 如果你需要按总出现次数排序，请读取 `Dict.json` 或 `Dict-Sqlite.db` 后自行排序。
+
+## Dict.json
+
+修改时间（北京时间）：2026-04-08 20:30:00 CST
+
+词典生成逻辑已按最新上游 Packer 语义扩展。
+
+现在 `Dict.json` 不再只收录传统的 `lang/` 平铺键值，还会收录：
+- 经 `packer-policy.json` 物化后的资源
+- 非根 `lang` 路径与根目录 locale 文件
+- `.local`、`.hl` 等键值文本
+- 含嵌套结构的 JSON 字符串叶子节点
+
+影响：
+- 词条总数可能显著增加。
+- `key` 不再保证永远是原始 Translation Key。
+- 对于 guide、journal、`.local`、`.hl`、嵌套 JSON 等复杂资源，`key` 可能是 `目标路径#结构路径`。
+
+如果你的代码依赖 `key` 必须匹配传统 Translation Key 模式，需要改为同时接受上述 synthetic key。
