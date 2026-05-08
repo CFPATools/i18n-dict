@@ -46,6 +46,18 @@ jobs:
                   [entry.name for entry in project_dir.iterdir() if entry.is_dir() and version_pattern.fullmatch(entry.name)],
                   key=lambda item: item
               )
+              if not versions:
+                  versions = [
+                      "1.12.2",
+                      "1.16",
+                      "1.16-fabric",
+                      "1.18",
+                      "1.18-fabric",
+                      "1.19",
+                      "1.20",
+                      "1.20-fabric",
+                      "1.21",
+                  ]
           if not versions:
               raise SystemExit('No packer targets found in upstream config')
 
