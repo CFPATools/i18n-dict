@@ -24,12 +24,33 @@ jobs:
         run: |
           python <<'PY' > $GITHUB_OUTPUT
           import json
+          import re
           from pathlib import Path
 
-          config = json.loads((Path('Minecraft-Mod-Language-Package') / 'config' / 'packer.json').read_text(encoding='utf-8'))
-          versions = [entry['targetVersion'] for entry in config if 'targetVersion' in entry]
+          legacy_path = Path('Minecraft-Mod-Language-Package') / 'config' / 'packer.json'
+          config_dir = Path('Minecraft-Mod-Language-Package') / 'config' / 'packer'
+
+          if legacy_path.exists():
+              config = json.loads(legacy_path.read_text(encoding='utf-8'))
+              versions = [entry['targetVersion'] for entry in config if 'targetVersion' in entry]
+          elif config_dir.is_dir():
+              versions = []
+              for path in sorted(config_dir.glob('*.json'), key=lambda item: item.name):
+                  if re.fullmatch(r".+\\.json", path.name):
+                      versions.append(path.stem)
+          else:
+              versions = []
+
           if not versions:
-              raise SystemExit('No packer targets found in config/packer.json')
+              project_dir = Path('Minecraft-Mod-Language-Package') / 'projects'
+              versions = sorted(
+                  [entry.name for entry in project_dir.iterdir() if entry.is_dir()],
+                  key=lambda item: item
+              )
+          if not versions:
+              raise SystemExit('No packer targets found in upstream config')
+
+          versions = list(dict.fromkeys(versions))
           print(f"versions={json.dumps(versions)}")
           print(f"latest={versions[-1]}")
           PY
