@@ -425,24 +425,11 @@ def replace_string_leaves(value: Any, search_pattern: str, replacement: str) -> 
 
 
 def load_config(upstream_root: Path, version: str) -> Config:
-    legacy_path = upstream_root / "config" / "packer" / f"{version}.json"
-    if legacy_path.exists():
-        return _parse_config_record(json.loads(read_text(legacy_path)), version)
+    config_path = upstream_root / "config" / "packer" / f"{version}.json"
+    if not config_path.exists():
+        raise FileNotFoundError(f"Missing packer config for version {version}: {config_path}")
 
-    packed_config_path = upstream_root / "config" / "packer.json"
-    raw = json.loads(read_text(packed_config_path))
-    if not isinstance(raw, list):
-        raise ValueError("Invalid config format: expected a list in config/packer.json")
-
-    matched_version = next((entry for entry in raw if entry.get("targetVersion") == version), None)
-    if matched_version is None:
-        base_version = version.split("-", 1)[0]
-        if base_version != version:
-            matched_version = next((entry for entry in raw if entry.get("targetVersion") == base_version), None)
-    if matched_version is None:
-        raise KeyError(f"No packer config for version {version} in config/packer.json")
-
-    return _parse_config_record(matched_version, version)
+    return _parse_config_record(json.loads(read_text(config_path)), version)
 
 
 def load_local_config(namespace_dir: Path) -> FloatingConfig | None:
@@ -694,19 +681,15 @@ def materialize_locale(version: str, upstream_root: Path, locale: str) -> dict[s
     config = load_config(upstream_root, version)
     result: dict[str, ResourceProvider] = {}
 
-    legacy_assets_dir = upstream_root / "projects" / version / "assets"
-    if legacy_assets_dir.is_dir():
-        mod_version_pairs = ((mod_dir, mod_dir) for mod_dir in sorted(legacy_assets_dir.iterdir(), key=lambda item: item.name))
-    else:
-        assets_root = upstream_root / "projects" / "assets"
-        if not assets_root.is_dir():
-            raise FileNotFoundError(f"No assets root found for version {version}")
-        mod_version_pairs = (
-            (mod_dir, mod_dir / version)
-            for mod_dir in sorted(assets_root.iterdir(), key=lambda item: item.name)
-            if mod_dir.is_dir()
-            and (mod_dir / version).is_dir()
-        )
+    assets_root = upstream_root / "projects" / "assets"
+    if not assets_root.is_dir():
+        raise FileNotFoundError(f"No assets root found for version {version}")
+
+    mod_version_pairs = (
+        (mod_dir, mod_dir / version)
+        for mod_dir in sorted(assets_root.iterdir(), key=lambda item: item.name)
+        if mod_dir.is_dir() and (mod_dir / version).is_dir()
+    )
 
     for mod_dir, namespace_root in mod_version_pairs:
         if not mod_dir.is_dir():
