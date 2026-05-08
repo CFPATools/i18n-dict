@@ -692,16 +692,29 @@ def from_singleton(
 
 def materialize_locale(version: str, upstream_root: Path, locale: str) -> dict[str, ResourceProvider]:
     config = load_config(upstream_root, version)
-    assets_dir = upstream_root / "projects" / version / "assets"
     result: dict[str, ResourceProvider] = {}
 
-    for mod_dir in sorted(assets_dir.iterdir(), key=lambda item: item.name):
+    legacy_assets_dir = upstream_root / "projects" / version / "assets"
+    if legacy_assets_dir.is_dir():
+        mod_version_pairs = ((mod_dir, mod_dir) for mod_dir in sorted(legacy_assets_dir.iterdir(), key=lambda item: item.name))
+    else:
+        assets_root = upstream_root / "projects" / "assets"
+        if not assets_root.is_dir():
+            raise FileNotFoundError(f"No assets root found for version {version}")
+        mod_version_pairs = (
+            (mod_dir, mod_dir / version)
+            for mod_dir in sorted(assets_root.iterdir(), key=lambda item: item.name)
+            if mod_dir.is_dir()
+            and (mod_dir / version).is_dir()
+        )
+
+    for mod_dir, namespace_root in mod_version_pairs:
         if not mod_dir.is_dir():
             continue
         if mod_dir.name in config.base.exclusion_mods:
             continue
         curseforge = "Unknown" if mod_dir.name == "1UNKNOWN" else mod_dir.name
-        for namespace_dir in sorted(mod_dir.iterdir(), key=lambda item: item.name):
+        for namespace_dir in sorted(namespace_root.iterdir(), key=lambda item: item.name):
             if not namespace_dir.is_dir():
                 continue
             if namespace_dir.name in config.base.exclusion_namespaces:
