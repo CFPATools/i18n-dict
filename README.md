@@ -4,6 +4,18 @@
 
 **词典每周五自动更新，未做版本改动校验，不保证每次更新均与上次更新存在差异。**
 
+## 数据来源与支持的文件
+
+本仓库的 GitHub Actions workflow 会在运行时 checkout 最新的上游仓库 `CFPAOrg/Minecraft-Mod-Language-Package`。词典脚本读取 workflow 工作目录中的 `./Minecraft-Mod-Language-Package`。
+
+除传统的 `lang/en_us|zh_cn.{lang,json}` 外，当前词典还会处理：
+- `packer-policy.json` 的 `direct`、`indirect`、`composition`、`singleton`、`modifyOnly`
+- `local-config.json` 的路径和 domain 规则
+- 非根 `lang` 路径、根目录 locale 文件
+- `.local`、`.hl` 等键值文本资源
+- JSON 中的嵌套对象、数组等复杂结构
+- `.lang` 的 `#PARSE_ESCAPES`、续行与注释语义
+
 ## Release文件介绍
 
 ### 本仓库的Release页面会每周放出以下文件：
@@ -27,12 +39,20 @@ Dict-Sqlite.db
     "origin_name": "Cart", // 英文原文
     "trans_name": "车", // 中文译文
     "modid": "cazfps_the_dead_sea", // 模组ID
-    "key": "block.cazfps_the_dead_sea.cart", // 所属模组Translation Key
+    "key": "block.cazfps_the_dead_sea.cart", // 传统语言文件里通常是 Translation Key；复杂资源里可能是“目标路径#结构路径”
     "version": "1.18", // 所属游戏版本
     "curseforge": "cazfps-the-dead-sea" // CurseForge ID
 }
 ```
 主要产生用途的便是`origin_name`和`trans_name`这两个键，而其它键主要为译者辅助参考所用，例如条目`Cart`在高版本主流译名为`车`，而在1.12.2版本主流译名为`马车`。
+
+传统语言文件里的 `key` 通常仍然是模组原本的 Translation Key。
+
+guide、journal、`.local`、`.hl`、根目录 locale JSON、以及包含嵌套结构的 JSON 资源，会把 `key` 写成 `目标路径#结构路径`，例如：
+```json
+"assets/mana-and-artifice/guide/zh_cn.json#Using  this Codex.sections[0].value"
+```
+这样可以直接看出条目来自哪个文件、哪个位置。
 
 `Dict-Mini.json`主要文件结构则是字典，为了缩小体积，直接将英文原文作为键名，译文作为值，每个条目形如
 ```json
