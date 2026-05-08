@@ -6,36 +6,54 @@ on:
     - cron: '0 9 * * 5' # 每周五晚上5点执行，根据Github抵消时差后是17-8
 
 jobs:
-  packer:
-    runs-on: ubuntu-slim
-    strategy:
-      matrix:
-        version:
-          - "1.12.2"
-          - "1.16"
-          - "1.16-fabric"
-          - "1.18"
-          - "1.18-fabric"
-          - "1.19"
-          - "1.20"
-          - "1.20-fabric"
-          - "1.21"
+  prepare:
+    runs-on: ubuntu-latest
     outputs:
-      latest: "1.21"
+      versions: ${{ steps.versions.outputs.versions }}
+      latest: ${{ steps.versions.outputs.latest }}
     steps:
-      - name: Checkout Scripts
-        uses: actions/checkout@main
-        with:
-          fetch-depth: '1'
-
       - name: Checkout Language Pack
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           fetch-depth: '1'
           repository: CFPAOrg/Minecraft-Mod-Language-Package
           path: Minecraft-Mod-Language-Package
 
-      - uses: actions/setup-python@main
+      - name: Resolve packer versions
+        id: versions
+        run: |
+          python <<'PY' > $GITHUB_OUTPUT
+          import json
+          from pathlib import Path
+
+          config = json.loads((Path('Minecraft-Mod-Language-Package') / 'config' / 'packer.json').read_text(encoding='utf-8'))
+          versions = [entry['targetVersion'] for entry in config if 'targetVersion' in entry]
+          if not versions:
+              raise SystemExit('No packer targets found in config/packer.json')
+          print(f"versions={json.dumps(versions)}")
+          print(f"latest={versions[-1]}")
+          PY
+
+  packer:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ${{ fromJson(needs.prepare.outputs.versions) }}
+    steps:
+      - name: Checkout Scripts
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '1'
+
+      - name: Checkout Language Pack
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '1'
+          repository: CFPAOrg/Minecraft-Mod-Language-Package
+          path: Minecraft-Mod-Language-Package
+
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
@@ -43,25 +61,25 @@ jobs:
         run: python ./src/packer.py ${{ matrix.version }}
 
       - name: Upload JSON files
-        uses: actions/upload-artifact@main
+        uses: actions/upload-artifact@v4
         with:
           name: Dict-${{ matrix.version }}.json
           path: DictPacker/Dict-${{ matrix.version }}.json
           compression-level: 9
 
   release:
-    needs: packer
-    runs-on: ubuntu-slim
+    needs: [prepare, packer]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Scripts
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@main
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
       - name: Download JSON files
-        uses: actions/download-artifact@main
+        uses: actions/download-artifact@v4
         with:
           path: DictPacker
           merge-multiple: true
@@ -86,21 +104,21 @@ jobs:
             Dict-Sqlite.db
           # https://github.com/CFPATools/i18n-dict/actions/runs/${{ github.run_id }}
           body: |
-            当前词典的最新版本：${{ needs.packer.outputs.latest }}
+            当前词典的最新版本：${{ needs.prepare.outputs.latest }}
             
             你可以在以下 Actions 链接下载各个独立 Minecraft 版本的模组词典：
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
   cleanup:
     needs: release
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout Code
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@main
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
