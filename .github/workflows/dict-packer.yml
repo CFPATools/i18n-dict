@@ -39,12 +39,11 @@ jobs:
                   if re.fullmatch(r".+\\.json", path.name):
                       versions.append(path.stem)
           else:
+              version_pattern = re.compile(r"^\\d+\\.\\d+(?:\\.\\d+)?(?:-[\\w-]+)?$")
               versions = []
-
-          if not versions:
               project_dir = Path('Minecraft-Mod-Language-Package') / 'projects'
               versions = sorted(
-                  [entry.name for entry in project_dir.iterdir() if entry.is_dir()],
+                  [entry.name for entry in project_dir.iterdir() if entry.is_dir() and version_pattern.fullmatch(entry.name)],
                   key=lambda item: item
               )
           if not versions:
