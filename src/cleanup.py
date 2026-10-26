@@ -56,9 +56,15 @@ def add_expiry_warning(release: GitRelease, created_date: datetime) -> None:
     expiry_date: datetime = created_date + relativedelta(months=6)
     notice: str = f"⚠️ 已过期，将在 {expiry_date.strftime('%Y-%m-%d %H:%M UTC')} 删除"
 
-    if notice not in release.body:
-        new_body: str = f"{release.body}\n\n{notice}" if release.body else notice
-        release.update_release(body=new_body)
+    body = release.body or ""
+    if notice not in body:
+        new_body: str = f"{body}\n\n{notice}" if body else notice
+        release.update_release(
+            name=release.title or release.tag_name,
+            message=new_body,
+            draft=release.draft,
+            prerelease=release.prerelease,
+        )
 
 
 def purge_old_releases(expired_dict: Dict[Tuple[int, int], List[GitRelease]]) -> None:
