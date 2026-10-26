@@ -68,15 +68,13 @@ def main():
     origin_rows = defaultdict(list)
 
     # 整合词典
-    for path in OUTPUT.iterdir():
+    for path in sorted(OUTPUT.iterdir()):
         if path.suffix != '.json':
             continue
         print(f'处理{path.name}中', end=' ')
         count = 0
         for row in loads(path.read_text(encoding='utf-8')):
             count += 1
-            if len(row['origin_name']) > 50:
-                continue
             if row['origin_name'] == '':
                 continue
             integral.append(row)

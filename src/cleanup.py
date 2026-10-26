@@ -7,6 +7,11 @@ from dateutil.relativedelta import relativedelta
 import os
 
 
+def release_date(release: GitRelease) -> datetime:
+    # GitHub's created_at can be the tagged commit's date, not publication time.
+    return (release.published_at or release.created_at).astimezone(timezone.utc)
+
+
 def process_releases(repo: Repository) -> None:
     """处理 Release 清理逻辑"""
     current_time: datetime = datetime.now(timezone.utc)  # 使用 UTC 时区
@@ -16,7 +21,7 @@ def process_releases(repo: Repository) -> None:
     recent_cutoff: datetime = current_time - relativedelta(hours=2)
     old_releases: List[GitRelease] = [
         r for r in all_releases
-        if r.created_at.astimezone(timezone.utc) < recent_cutoff  # 统一时区比较
+        if release_date(r) < recent_cutoff
     ]
 
     # 时间阈值计算（保持时区一致）
@@ -27,10 +32,10 @@ def process_releases(repo: Repository) -> None:
     expired_releases: Dict[Tuple[int, int], List[GitRelease]] = {}
 
     for release in old_releases:
-        created: datetime = release.created_at.astimezone(timezone.utc)  # 转换为 UTC 时区
+        created: datetime = release_date(release)
         if created < six_months_ago:
             process_expired_release(expired_releases, release)
-        elif three_months_ago < created < six_months_ago:
+        elif six_months_ago <= created < three_months_ago:
             add_expiry_warning(release, created)
 
     purge_old_releases(expired_releases)
@@ -41,7 +46,7 @@ def process_expired_release(
         release: GitRelease
 ) -> None:
     """处理已过期 Release（带时区转换）"""
-    created: datetime = release.created_at.astimezone(timezone.utc)
+    created: datetime = release_date(release)
     key: Tuple[int, int] = (created.year, created.month)
     expired_dict.setdefault(key, []).append(release)
 
@@ -62,13 +67,13 @@ def purge_old_releases(expired_dict: Dict[Tuple[int, int], List[GitRelease]]) ->
         # 按创建时间降序排序
         sorted_releases: List[GitRelease] = sorted(
             monthly_releases,
-            key=lambda x: x.created_at,
+            key=release_date,
             reverse=True
         )
 
         # 保留最新版本，删除其他
         for old_release in sorted_releases[1:]:
-            print(f"Deleting {old_release.tag_name} ({old_release.created_at})")
+            print(f"Deleting {old_release.tag_name} ({release_date(old_release)})")
             old_release.delete_release()
 
 

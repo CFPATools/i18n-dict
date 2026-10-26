@@ -8,6 +8,12 @@
 
 本仓库的 GitHub Actions workflow 会在运行时 checkout 最新的上游仓库 `CFPAOrg/Minecraft-Mod-Language-Package`。词典脚本读取 workflow 工作目录中的 `./Minecraft-Mod-Language-Package`。
 
+每次发布的所有版本使用同一个上游 Git 修订，修订号写入 Release 描述。版本列表从配置中的 `base.version`（或旧配置的 `targetVersion`）和实际数据目录自动发现，新增 MC 版本或加载器无需修改 workflow；同目录中的辅助 JSON 不会被当成版本。数据目录有翻译但尚无独立配置的版本，会复用相同 MC 基础版本的文本规则；没有基础配置时使用默认的双语资源规则，这些版本不会自行继承其他版本的内容。
+
+词典支持 `projects/assets/<mod>/<version>/<namespace>` 和旧的 `projects/<version>/assets/<mod>/<namespace>` 两种布局。按照上游 `fallbackVersions` 的顺序，为每个模组选用第一个可用版本；因此版本词典也包含上游明确允许回退使用的翻译。不同模组共享 namespace 时，各自的词条和来源都会保留。缺少英文的键会尝试使用同一 namespace 内无冲突的英文原文。
+
+每次成功发布后，workflow 自动提交 `.github/release-state.json`，记录发布时间、上游修订和版本列表，同时保持仓库活动，避免公开仓库长期没有提交时定时任务被停用。若定时任务已停用，可运行 `gh workflow enable dict-packer.yml` 恢复，再用 `gh workflow run dict-packer.yml` 补发。
+
 除传统的 `lang/en_us|zh_cn.{lang,json}` 外，当前词典还会处理：
 - `packer-policy.json` 的 `direct`、`indirect`、`composition`、`singleton`、`modifyOnly`
 - `local-config.json` 的路径和 domain 规则
@@ -15,6 +21,8 @@
 - `.local`、`.hl` 等键值文本资源
 - JSON 中的嵌套对象、数组等复杂结构
 - `.lang` 的 `#PARSE_ESCAPES`、续行与注释语义
+
+完整词典、小词典和 SQLite 都保留长原文，原文超过 50 字符的指南、说明等内容也会收录。没有英文与中文对应关系的资源不会凭空生成翻译。
 
 ## Release文件介绍
 

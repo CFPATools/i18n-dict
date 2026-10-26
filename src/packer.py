@@ -8,6 +8,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
+if __package__:
+    from .upstream import iter_mod_directories, load_config_record
+else:
+    from upstream import iter_mod_directories, load_config_record
+
 OUTPUT_DIR = Path("DictPacker")
 DEFAULT_UPSTREAM_ROOT = Path("./Minecraft-Mod-Language-Package")
 UPSTREAM_ROOT_ENV = "I18N_DICT_UPSTREAM_ROOT"
@@ -28,6 +33,7 @@ class BaseConfig:
     target_languages: tuple[str, ...]
     exclusion_mods: tuple[str, ...]
     exclusion_namespaces: tuple[str, ...]
+    fallback_versions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -245,6 +251,7 @@ def _parse_config_record(raw_version: dict[str, Any], fallback_version: str) -> 
         exclusion_namespaces=_coerce_str_tuple(
             base_section.get("exclusionNamespaces", base_section.get("noProcessNamespace", ()))
         ),
+        fallback_versions=_coerce_str_tuple(base_section.get("fallbackVersions", ())),
     )
     floating = FloatingConfig(
         inclusion_domains=_coerce_str_tuple(
@@ -425,11 +432,7 @@ def replace_string_leaves(value: Any, search_pattern: str, replacement: str) -> 
 
 
 def load_config(upstream_root: Path, version: str) -> Config:
-    config_path = upstream_root / "config" / "packer" / f"{version}.json"
-    if not config_path.exists():
-        raise FileNotFoundError(f"Missing packer config for version {version}: {config_path}")
-
-    return _parse_config_record(json.loads(read_text(config_path)), version)
+    return _parse_config_record(load_config_record(upstream_root, version), version)
 
 
 def load_local_config(namespace_dir: Path) -> FloatingConfig | None:
@@ -677,26 +680,14 @@ def from_singleton(
     yield create_provider_from_file(source_path, destination, meta), get_apply_options(parameters)
 
 
-def materialize_locale(version: str, upstream_root: Path, locale: str) -> dict[str, ResourceProvider]:
+def materialize_locale(version: str, upstream_root: Path, locale: str) -> dict[tuple[str, str], ResourceProvider]:
     config = load_config(upstream_root, version)
-    result: dict[str, ResourceProvider] = {}
+    result: dict[tuple[str, str], ResourceProvider] = {}
 
-    assets_root = upstream_root / "projects" / "assets"
-    if not assets_root.is_dir():
-        raise FileNotFoundError(f"No assets root found for version {version}")
-
-    mod_version_pairs = (
-        (mod_dir, mod_dir / version)
-        for mod_dir in sorted(assets_root.iterdir(), key=lambda item: item.name)
-        if mod_dir.is_dir() and (mod_dir / version).is_dir()
-    )
-
-    for mod_dir, namespace_root in mod_version_pairs:
-        if not mod_dir.is_dir():
+    for mod_name, namespace_root in iter_mod_directories(upstream_root, version, config.base.fallback_versions):
+        if mod_name in config.base.exclusion_mods:
             continue
-        if mod_dir.name in config.base.exclusion_mods:
-            continue
-        curseforge = "Unknown" if mod_dir.name == "1UNKNOWN" else mod_dir.name
+        curseforge = "Unknown" if mod_name == "1UNKNOWN" else mod_name
         for namespace_dir in sorted(namespace_root.iterdir(), key=lambda item: item.name):
             if not namespace_dir.is_dir():
                 continue
@@ -706,8 +697,10 @@ def materialize_locale(version: str, upstream_root: Path, locale: str) -> dict[s
             meta = SourceMeta(modid=namespace_dir.name, curseforge=curseforge)
             providers = enumerate_providers(namespace_dir, config, locale, meta, upstream_root)
             for provider in providers:
-                existing = result.get(provider.destination)
-                result[provider.destination] = provider.apply_to(existing, ApplyOptions())
+                # A namespace is not a mod identity: unrelated mods can share it.
+                key = (mod_name, provider.destination)
+                existing = result.get(key)
+                result[key] = provider.apply_to(existing, ApplyOptions())
     return result
 
 
@@ -863,20 +856,61 @@ def extract_entries_from_pair(
     return []
 
 
+def shared_origin_providers(
+    providers: dict[tuple[str, str], ResourceProvider],
+) -> dict[str, ResourceProvider]:
+    """Fill absent English from shared namespaces only when sources agree."""
+    grouped: dict[str, list[ResourceProvider]] = {}
+    for (_, destination), provider in providers.items():
+        grouped.setdefault(destination, []).append(provider)
+
+    shared = {}
+    for destination, candidates in grouped.items():
+        first = candidates[0]
+        if isinstance(first, MappingProvider) and all(
+            isinstance(item, MappingProvider) and item.mapping_format == first.mapping_format
+            for item in candidates
+        ):
+            mapping = {}
+            conflicts = set()
+            for candidate in candidates:
+                for key, value in candidate.mapping.items():
+                    if key in mapping and mapping[key] != value:
+                        conflicts.add(key)
+                    else:
+                        mapping[key] = value
+            shared[destination] = create_mapping_provider(
+                first.destination, first.mapping_format,
+                {key: value for key, value in mapping.items() if key not in conflicts}, first.meta,
+            )
+        elif isinstance(first, TextProvider) and all(
+            isinstance(item, TextProvider) and item.content == first.content for item in candidates
+        ):
+            shared[destination] = first
+    return shared
+
+
 def build_entries_for_version(version: str, upstream_root: Path) -> list[dict[str, str]]:
     origin_providers = {
-        canonicalize_locale_destination(destination): provider
-        for destination, provider in materialize_locale(version, upstream_root, "en_us").items()
+        (mod, canonicalize_locale_destination(destination)): provider
+        for (mod, destination), provider in materialize_locale(version, upstream_root, "en_us").items()
     }
     trans_providers = {
-        canonicalize_locale_destination(destination): provider
-        for destination, provider in materialize_locale(version, upstream_root, "zh_cn").items()
+        (mod, canonicalize_locale_destination(destination)): provider
+        for (mod, destination), provider in materialize_locale(version, upstream_root, "zh_cn").items()
     }
+    shared_origins = shared_origin_providers(origin_providers)
 
     rows: list[dict[str, str]] = []
-    for destination in sorted(set(origin_providers) & set(trans_providers)):
-        origin_provider = origin_providers[destination]
-        trans_provider = trans_providers[destination]
+    for key, trans_provider in sorted(trans_providers.items()):
+        origin_provider = origin_providers.get(key)
+        shared = shared_origins.get(key[1])
+        if origin_provider is None:
+            origin_provider = shared
+        elif isinstance(origin_provider, MappingProvider) and isinstance(shared, MappingProvider):
+            origin_provider = shared.apply_to(origin_provider, ApplyOptions())
+        if origin_provider is None:
+            continue
         rows.extend(extract_entries_from_pair(trans_provider.destination, origin_provider, trans_provider, version))
     return rows
 

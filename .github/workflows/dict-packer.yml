@@ -3,18 +3,29 @@ name: Release Packed Dict
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 9 * * 5' # 每周五晚上5点执行，根据Github抵消时差后是17-8
+    - cron: '0 9 * * 5' # 每周五北京时间 17:00（UTC 09:00）
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
+      upstream_sha: ${{ steps.upstream.outputs.sha }}
       versions: ${{ steps.versions.outputs.versions }}
       latest: ${{ steps.versions.outputs.latest }}
     steps:
+      - name: Checkout Scripts
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Checkout Language Pack
         uses: actions/checkout@v4
         with:
@@ -22,64 +33,19 @@ jobs:
           repository: CFPAOrg/Minecraft-Mod-Language-Package
           path: Minecraft-Mod-Language-Package
 
+      - name: Pin upstream revision
+        id: upstream
+        run: echo "sha=$(git -C Minecraft-Mod-Language-Package rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Resolve packer versions
         id: versions
-        run: |
-          python <<'PY' > $GITHUB_OUTPUT
-          import json
-          import re
-          from pathlib import Path
-
-          legacy_path = Path('Minecraft-Mod-Language-Package') / 'config' / 'packer.json'
-          config_dir = Path('Minecraft-Mod-Language-Package') / 'config' / 'packer'
-
-          versions = []
-          if legacy_path.exists():
-              config = json.loads(legacy_path.read_text(encoding='utf-8'))
-              versions = [entry['targetVersion'] for entry in config if 'targetVersion' in entry]
-
-          if not versions and config_dir.is_dir():
-              versions = []
-              for path in sorted(config_dir.glob('*.json'), key=lambda item: item.name):
-                  if path.stem == 'packer-example':
-                      continue
-                  versions.append(path.stem)
-
-          if not versions:
-              version_pattern = re.compile(r"^\\d+\\.\\d+(?:\\.\\d+)?(?:-[\\w-]+)?$")
-              project_dir = Path('Minecraft-Mod-Language-Package') / 'projects'
-              versions = sorted(
-                  [entry.name for entry in project_dir.iterdir() if entry.is_dir() and version_pattern.fullmatch(entry.name)],
-                  key=lambda item: item
-              )
-
-          if not versions:
-              versions = [
-                  "1.12.2",
-                  "1.16",
-                  "1.16-fabric",
-                  "1.18",
-                  "1.18-fabric",
-                  "1.19",
-                  "1.20",
-                  "1.20-fabric",
-                  "1.21",
-                  "1.21-fabric",
-                  "26.1",
-                  "26.1-fabric",
-              ]
-          if not versions:
-              raise SystemExit('No packer targets found in upstream config')
-
-          versions = list(dict.fromkeys(versions))
-          print(f"versions={json.dumps(versions)}")
-          print(f"latest={versions[-1]}")
-          PY
+        run: python -m src.upstream >> "$GITHUB_OUTPUT"
 
   packer:
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         version: ${{ fromJson(needs.prepare.outputs.versions) }}
     steps:
@@ -93,6 +59,7 @@ jobs:
         with:
           fetch-depth: '1'
           repository: CFPAOrg/Minecraft-Mod-Language-Package
+          ref: ${{ needs.prepare.outputs.upstream_sha }}
           path: Minecraft-Mod-Language-Package
 
       - uses: actions/setup-python@v5
@@ -100,7 +67,9 @@ jobs:
           python-version: "3.13"
 
       - name: Pack dict
-        run: python ./src/packer.py ${{ matrix.version }}
+        env:
+          PACKER_VERSION: ${{ matrix.version }}
+        run: python -m src.packer "$PACKER_VERSION"
 
       - name: Upload JSON files
         uses: actions/upload-artifact@v4
@@ -111,6 +80,8 @@ jobs:
 
   release:
     needs: [prepare, packer]
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Scripts
@@ -127,7 +98,7 @@ jobs:
           merge-multiple: true
 
       - name: Pack Integral files
-        run: python ./src/integral.py
+        run: python -m src.integral
 
       - name: Create timestamp
         id: create_timestamp
@@ -144,12 +115,39 @@ jobs:
             Dict.json
             Dict-Mini.json
             Dict-Sqlite.db
-          # https://github.com/CFPATools/i18n-dict/actions/runs/${{ github.run_id }}
           body: |
             当前词典的最新版本：${{ needs.prepare.outputs.latest }}
+            上游修订：${{ needs.prepare.outputs.upstream_sha }}
             
             你可以在以下 Actions 链接下载各个独立 Minecraft 版本的模组词典：
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      # A published release alone does not count as repository activity for cron.
+      # Record provenance in Git so weekly publishing survives the 60-day cutoff.
+      - name: Record release provenance and keep schedule active
+        env:
+          UPSTREAM_SHA: ${{ needs.prepare.outputs.upstream_sha }}
+          PACKER_VERSIONS: ${{ needs.prepare.outputs.versions }}
+          RELEASE_TAG: 模组词典-${{ steps.create_timestamp.outputs.timestamp }}
+        run: |
+          python <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          state = {
+              "published_at": datetime.now(timezone.utc).isoformat(),
+              "tag": os.environ["RELEASE_TAG"],
+              "upstream_sha": os.environ["UPSTREAM_SHA"],
+              "versions": json.loads(os.environ["PACKER_VERSIONS"]),
+          }
+          Path('.github/release-state.json').write_text(json.dumps(state, indent=2) + '\n', encoding='utf-8')
+          PY
+          git add .github/release-state.json
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "Record dictionary release $RELEASE_TAG"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
 
   cleanup:
     needs: release
@@ -165,7 +163,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install Dependencies
-        run: pip install PyGithub python-dateutil types-python-dateutil
+        run: python -m pip install -r requirements.txt
 
       - name: Run Cleanup Script
         env:
